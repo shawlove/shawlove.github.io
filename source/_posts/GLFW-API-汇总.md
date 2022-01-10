@@ -4,7 +4,7 @@ tags: -OpenGL -GLFW
 categories: API
 date: 2022-01-10 11:01:47
 ---
-学完之后不常用，老是会忘，此文档用于帮助恢复记忆。且会不断维护。  
+学完之后不常用，老是会忘，此文档用于帮助恢复记忆。且会不断维护。    
 官方文档:<https://www.glfw.org/docs/latest/>
 # glfwInit & glfwTerminate
 初始化GLFW，多次调用不会重复初始化（如果已经初始化会直接返回GLFW_TRUE）。  
