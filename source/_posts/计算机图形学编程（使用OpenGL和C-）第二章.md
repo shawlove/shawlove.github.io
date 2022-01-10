@@ -90,7 +90,7 @@ glDrawArrays(GLenum mode, Glint first,GLsizei count)
 ![](https://pic.imgdb.cn/item/61d80b742ab3f51d9117a928.png)
 ```c++
 (#include与之前相同)
-#define numVAO 1
+#define numVAOs 1
 
 GLuint renderingProgram;
 Gluint vao[numVAOs];
@@ -176,7 +176,7 @@ void main(void)
 隐藏面消除（Hidden Surface Removal，HSR)  
 此阶段不可编程，可配置  
 工作原理：  
-通过两个缓冲区完成：颜色缓冲区、深度缓冲区（Z缓冲、Z-buffer）。这两个缓冲区大小和光栅相同——屏幕的每个像素，在缓冲区都有对应的  
+通过两个缓冲区完成：颜色缓冲区、深度缓冲区（Z缓冲、Z-buffer）。这两个缓冲区大小和光栅相同（屏幕的每个像素，在缓冲区都有对应的）  
 1. 在每个场景渲染前，深度缓冲区的值都为最大深度值  
 2. 片段着色器输出像素时，计算与观察者的距离  
 3. 留下距离近的像素  
