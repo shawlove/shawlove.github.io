@@ -82,3 +82,37 @@ array==0：取消当前绑定的VAO
 # glDrawArrays
 ![](https://pic.imgdb.cn/item/61dbf2672ab3f51d91abcdce.png)
 开始渲染（enabled arrays：VAO）  
+
+# glGetShaderiv
+![](https://pic.imgdb.cn/item/61e0efaa2ab3f51d91097c4c.png)
+获取shader的参数  
+pname:
+* GL_SHADER_TYPE 返回shader类型（GL_VERTEX_SHADER | GL_GEOMETRY_SHADER | GL_FRAGMENT_SHADER ）
+* GL_DELETE_STATUS 返回shader是否被delete
+* GL_COMPILE_STATUS 返回是否编译成功
+* GL_INFO_LOG_LENGTH 返回log字符串长度
+* GL_SHADER_SOURCE_LENGTH 返回source的字符串长度，没有返回0
+
+# glGetShaderInfoLog
+![](https://pic.imgdb.cn/item/61e0f0f22ab3f51d910a7b3b.png)
+返回shader的log
+
+# glGetError
+![](https://pic.imgdb.cn/item/61e0f2a32ab3f51d910bc09e.png)
+获取错误flag  
+每次调用glGetError会返回一个随机error flag，然后清理这个flag，所以如果有多个error flag需要在循环中调用，直到glGetError返回GL_NO_ERROR  
+errors：
+* GL_NO_ERROR 没有错误
+* GL_INVALID_ENUM 向枚举参数传了一个未知枚举
+* GL_INVALID_VALUE 数值超出范围
+* GL_INVALID_OPERATION 当前不允许的操作
+* GL_INVALID_FRAMEBUFFER_OPERATION framebuffer未完成
+* GL_OUT_OF_MEMORY 内存爆了
+* GL_STACK_UNDERFLOW 栈下溢
+* GL_STACK_OVERFLOW 栈溢出
+
+# glGetUniformLocation 
+![](https://pic.imgdb.cn/item/61e1263a2ab3f51d91367378.png)
+传入uniform变量名，返回其location
+
+# 

@@ -180,3 +180,162 @@ void main(void)
 1. 在每个场景渲染前，深度缓冲区的值都为最大深度值  
 2. 片段着色器输出像素时，计算与观察者的距离  
 3. 留下距离近的像素  
+# 检测OpenGL和GLSL错误
+* glGetError获取当前OpenGL错误
+* glGetShaderiv、glGetShaderInfoLog获取shader错误log
+* glGetProgramiv、glGetProgramInfoLog获取program错误log  
+可封装出三个通用方法
+```c++
+void printShaderLog(GLuint shader) {
+    int len = 0;
+    int chWrittn = 0;
+    char *log;
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
+    if (len > 0) {
+        log = (char *)malloc(len);
+        glGetShaderInfoLog(shader, len, &chWrittn, log);
+        cout << "Shader Info Log: " << log << endl;
+        free(log);
+    }
+}
+
+void printProgramLog(int prog) {
+    int len = 0;
+    int chWrittn = 0;
+    char *log;
+    glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
+    if (len > 0) {
+        log = (char *)malloc(len);
+        glGetProgramInfoLog(prog, len, &chWrittn, log);
+        cout << "Program Info Log: " << log << endl;
+        free(log);
+    }
+}
+
+bool checkOpenGLError() {
+    bool foundError = false;
+    int glErr = glGetError();
+    while (glErr != GL_NO_ERROR) {
+        cout << "glError: " << glErr << endl;
+        foundError = true;
+        glErr = glGetError();
+    }
+    return foundError;
+}
+```
+
+使用方法  
+```c++
+  GLint vertCompiled;
+    GLint fragCompiled;
+    GLint linked;
+    
+    ...
+    //检查编译错误
+    glCompileShader(vShader);
+    checkOpenGLError();
+    //获取编译是否成功
+    glGetShaderiv(vShader, GL_COMPILE_STATUS, &vertCompiled);
+    if (vertCompiled == 1) {
+         cout << "vertex compilation success" << endl;
+    }
+    else {
+        cout << "vertex compilation failed" << endl;
+        printShaderLog(vShader);
+    }
+    
+    glCompileShader(fShader);
+    checkOpenGLError();
+    glGetShaderiv(fShader, GL_COMPILE_STATUS, &fragCompiled);
+    if (fragCompiled == 1) {
+        cout << "fragment compilation success" << endl;
+    }
+    else {
+        cout << "fragment compilation failed" << endl;
+        printShaderLog(fShader);
+    }
+    
+    ...
+    //检查链接错误
+    glLinkProgram(vfprogram);
+    checkOpenGLError();
+    //获取链接是否成功
+    glGetProgramiv(vfprogram, GL_LINK_STATUS, &linked);
+    if (linked == 1) {
+        cout << "linking succeeded" << endl;
+    }
+    else {
+        cout << "linking failed" << endl;
+        printProgramLog(vfprogram);
+    }
+```
+
+图形调试器  
+Nvidia显卡——Nsight  
+Amd显卡——CodeXL  
+
+# 从文件读取GLSL源代码
+把glsl代码写到.glsl文件中，c++读取  
+
+包含头文件:
+```c++
+#include <string>
+#include <iostream>
+#include <fstream>
+```
+
+读取：
+```c++
+string readFile(const char *filePath) {
+    string content;
+    ifstream fileStream(filePath, ios::in);
+    string line = "";
+    while (!fileStream.eof()) {
+        getline(fileStream, line);
+        content.append(line + "\n");
+    }
+    fileStream.close();
+    return content;
+}
+```
+
+使用：
+```c++
+GLuint createShaderProgram(){
+    ...
+    string vertShaderStr = readFile("vertShader.glsl");
+    string fragShaderStr = readFile("fragShader.glsl");
+    
+    const char *vertShaderSrc = vertShaderStr.c_str();
+    const char *fragShaderSrc = fragShaderStr.c_str();
+    
+    ...
+}
+```
+
+# 从顶点构建对象
+渲染一个三角形  
+```c++
+glDrawArrays(GL_TRIANGLES, 0, 3);
+```
+
+gl_VertexID代表顶点索引
+```glsl
+#version 430
+void main(void)
+{
+	if (gl_VertexID == 0) gl_Position = vec4( 0.25,-0.25, 0.0, 1.0);
+  else if (gl_VertexID == 1) gl_Position = vec4(-0.25,-0.25, 0.0, 1.0);
+  else gl_Position = vec4( 0.25, 0.25, 0.0, 1.0);
+}
+```
+![](https://pic.imgdb.cn/item/61e1108b2ab3f51d91227a71.png)
+# 场景动画
+通过给Shader赋值实现
+给Shader变量赋值的机制叫做Uniform变量（统一变量）  
+```c++
+//获取Uniform变量  
+GLuint offsetLoc = glGetUniformLocation(renderingProgram, "offset");
+//赋值
+glProgramUniform1f(renderingProgram, offsetLoc, x);
+```  
