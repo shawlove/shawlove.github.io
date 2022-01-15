@@ -115,4 +115,6 @@ errors：
 ![](https://pic.imgdb.cn/item/61e1263a2ab3f51d91367378.png)
 传入uniform变量名，返回其location
 
-# 
+# glUniform系列
+向uniform变量传值
+https://pic.imgdb.cn/item/61e2c1002ab3f51d9171bed6.png
