@@ -1,6 +1,6 @@
 ---
 title: OpenGL API 汇总
-tags: OpenGL
+tags: [OpenGL,C++]
 categories: API
 date: 2022-01-10 10:58:42
 ---
