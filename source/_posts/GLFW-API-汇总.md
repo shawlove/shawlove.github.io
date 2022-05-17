@@ -1,6 +1,6 @@
 ---
 title: GLFW API 汇总
-tags: -OpenGL -GLFW
+tags: [OpenGL,C++,GLFW]
 categories: API
 date: 2022-01-10 11:01:47
 ---
