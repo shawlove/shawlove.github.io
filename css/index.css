@@ -4259,7 +4259,6 @@ blockquote footer cite:before {
 #sidebar #sidebar-menus .menus_items .menus_item_child {
   margin: 0;
   list-style: none;
-  display: none;
 }
 #vcomment {
   font-size: 1.1em;
