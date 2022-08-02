@@ -18,57 +18,30 @@ lua是解释性语言（不事先编译，运行时通过lua解释器跨平台�
 * light userdata和full userdata机制
 * C#有与原生代码的互操作性（P/Invoke），可以操作非托管代码，如C代码。  
 
-## lua栈索引
--1代表栈顶，1代表栈底
-![](https://pic.imgdb.cn/item/62e792fe8c61dc3b8ee77b34.png)
+lua-c交互：  
 
-## lua_CFunction
-以下C方法为官方案例
-```c
-static int foo(lua_State *L){
-    int n = lua_gettop(L); //参数个数
-    lua_Number sum = 0.0;
-    int i;
-    for(i=1; i<=n ;i++>){
-        if(!lua_isnumber(L,i)){
-            lua_pushliteral(L, "参数错误，只能为number");
-            lua_error(L);
-        }
-        sum += lua_tonumber(L,i);
-    }
-    lua_pushnumber(L, sum/n); //第一个返回值
-    lua_pushnumber(L, sum); //第二个返回值
-    return 2;
-}
-```
+# lua调用C#
+## 调用C#对象的属性、字段、方法
+在C#端把C#对象的属性、字段、方法都封装成lua_CFunction。传入lua端时设置userdata的metatable，使lua调用userdata时会调用C#端的方法。
+## 创建C#对象
+在C#创建CS表，封装构造方法  
+# C#传值到lua
+1. 通过传入顺序作为key储存到字典中（防止C#端无引用造成gc，也用于通过userdata地址查询C#对象）
+2. 根据类型获取metatable（没有则创建，metatable存在lua注册表中）
+3. 在lua端创建userdata，大小为sizeof(int)，地址与key保持相同
+4. 设置metatable
+## 创建metatable
+把C#对象的属性、字段、方法都封装成lua_CFunction，通过` Marshal.GetFunctionPointerForDelegate(function)`获取委托指针，设置到metatable中。  
+通过`luaL_ref()`获取注册表中未使用的key，保存到lua注册表中。这里的key也就是xlua中的type_id。  
+如何封装属性、字段、方法呢？答案是生成代码。所以用[LuaCallCSharp]标记需要生成代码的类。
+## 创建CS表
+通过命名空间创建树状的表（CS是张表，CS.XX也是张表），存到lua注册表中。  
+类型的静态变量，常量也会写入到对于的表中。
+## 值类型GC问题
+xlua提供了[GCOptimize]处理值类型GC。  
+如果不加这个特性，会默认按照object的方式传值，会有一次装箱操作。  
+原理： 基于基元类型或由基元类型组成的结构体，复制一份到lua的userdata中。获取时按照字段排布顺序复制到C#。（在Xlua中对应Pack，UnPack方法，会为加了GCOptimizeAttribute点结构体生成对应代码）。
 
-`static int MethodName(lua_State *L){}`是lua_CFunction的固定格式，只有这种格式的C方法才能被lua调用  
-`lua_State`代表一个lua的一个线程，lua的所有方法的第一个参数是lua_State（除了lua_newstate,他是创建一个lua_State）  
-`lua_gettop()`获取栈的高度。在调用lua_CFunction时，所有对虚拟栈的操作都会指向一个新的栈，姑且称为方法栈（方法栈在非lua_CFunction调用期间也保持激活）。方法栈在每次调用lua_CFunction会清空，所以这里栈的高度就是参数个数。  
-`lua_isnumber(L,i)`指定索引处值是否number  
-`lua_pushliteral(L,"")`字面量string入栈  
-`lua_error()`报错，栈顶string作为错误信息  
-`lua_tonumber(L,i)`指定索引处值转化成number  
-`lua_pushnumber()`number入栈  
-
-最后返回2代表有两个返回值，就是我们按顺序压入栈道两个number。方法的参数也是第一个参数先入栈，所以index=1处的值就是第一个参数。  
-如上分析，这个函数就是计算所有参数的平均数和总和。
-
-## full userdata
-
-## lua注册表
-
-## P/Invoke
-
-如上，可以通过用C代码封装一部分lua的C接口提供给C#使用，C#就能操作lua了。  
-而lua怎样操作C#呢？答案是C#对象作为userdata，并把所有属性、字段、方法都封装成lua_CFunction，放入userdata的metatable中。这样lua调用C#对象时都会回到C#端处理，这也是Xlua源码为什么都写在C#端的原因。  
-
-# 如何组织C#和lua的交互以及注意的点
-## c#对象传入lua
-传入的情景
-* 创建实例
-* 获取静态变量
-* c#调用lua方法，作为参数传入lua
-
-
-`lua_newuserdata()`接口创建指定字节大小的full userdata，并返回地址。
+# C#获取Lua的值
+也就是官方文档说的映射
+## 接口
