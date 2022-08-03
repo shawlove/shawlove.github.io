@@ -16,32 +16,50 @@ lua是解释性语言（不事先编译，运行时通过lua解释器跨平台�
 * lua_CFunction机制可以让lua调用C方法
 * 注册表机制
 * light userdata和full userdata机制
-* C#有与原生代码的互操作性（P/Invoke），可以操作非托管代码，如C代码。  
+* C#有与原生代码的互操作性（P/Invoke），可以与非托管代码互相操作，如C代码。  
 
 lua-c交互：  
 
-# lua调用C#
-## 调用C#对象的属性、字段、方法
-在C#端把C#对象的属性、字段、方法都封装成lua_CFunction。传入lua端时设置userdata的metatable，使lua调用userdata时会调用C#端的方法。
-## 创建C#对象
-在C#创建CS表，封装构造方法  
-# C#传值到lua
-1. 通过传入顺序作为key储存到字典中（防止C#端无引用造成gc，也用于通过userdata地址查询C#对象）
-2. 根据类型获取metatable（没有则创建，metatable存在lua注册表中）
-3. 在lua端创建userdata，大小为sizeof(int)，地址与key保持相同
-4. 设置metatable
-## 创建metatable
-把C#对象的属性、字段、方法都封装成lua_CFunction，通过` Marshal.GetFunctionPointerForDelegate(function)`获取委托指针，设置到metatable中。  
-通过`luaL_ref()`获取注册表中未使用的key，保存到lua注册表中。这里的key也就是xlua中的type_id。  
-如何封装属性、字段、方法呢？答案是生成代码。所以用[LuaCallCSharp]标记需要生成代码的类。
-## 创建CS表
-通过命名空间创建树状的表（CS是张表，CS.XX也是张表），存到lua注册表中。  
-类型的静态变量，常量也会写入到对于的表中。
-## 值类型GC问题
-xlua提供了[GCOptimize]处理值类型GC。  
-如果不加这个特性，会默认按照object的方式传值，会有一次装箱操作。  
-原理： 基于基元类型或由基元类型组成的结构体，复制一份到lua的userdata中。获取时按照字段排布顺序复制到C#。（在Xlua中对应Pack，UnPack方法，会为加了GCOptimizeAttribute点结构体生成对应代码）。
+# LuaCallCSharp
+XLua用[LuaCallCSharp]标记lua端需要调用的C#代码，并为其生成代码。接下来进行原理分析。  
+lua调用C#的情况：  
+1. 调用类型的static字段、static属性、static方法、const字段（CS.CSClass.StaticOrConst）
+2. 创建C#对象（CS.CSClass()）
+3. C#端主动传值到lua
 
-# C#获取Lua的值
-也就是官方文档说的映射
-## 接口
+1，2两条XLua通过封装CS表使对象控制权在C#端，所以lua操作的所有C#对象都可以在C#端事先封装。  
+## 封装CS对象
+需要用到lua的三个特性：
+* lua_CFunction  
+C#对象的属性、字段、方法都封装成lua_CFunction,C#端的定义如下  
+![](https://pic.imgdb.cn/item/62e9dbe516f2c2beb1c0cac1.png)  
+[UnmanagedFunctionPointer]标记的委托可以通过指针传递到非托管代码，在这里就是传递到C代码中。  
+下面是生成代码的例子，我们来分析一下
+![](https://pic.imgdb.cn/item/62e9de2216f2c2beb1c30c48.png)
+[MonoPInvokeCallbackAttribute]用于标记作为非托管代码回调的方法。  [UnmanagedFunctionPointer]指定CallingConvention。这里设置为Cdecl是因为lua_CFunction默认是Cdecl。设置了CallingConvention后这里定义的lua_CSFunction在native code中就和lua_CFunction一致了。    
+`ObjectTranslator`与一个lua_State对应。  
+`FastGetCSObj`根据index获取cs对象，这里index为1的原因是第一个参数是self。1代表栈底、lua_CFunction调用期间使用的是单独的栈，每次调用前清空、参数按顺序压入栈。所以栈底就是第一个参数。  
+接下来获取剩余参数调用方法，结果压入栈即可。
+* userdata  
+代表一个CS对象，为其设置metatable实现对CS对象的访问。当日metatable的内容就是我们封装的属性、字段、方法。userdata的地址作为key，缓存到C#字典中。
+所以上图中的FastGetCSObj就是通过userdata的地址获取缓存CS对象。这样也可以保证CS对象不被GC
+* lua注册表  
+每种类型的CS对象都有对应的metatable，将metatable缓存到lua注册表中。key值用`luaL.Ref()`获取，并在C#缓存。
+## 值类型GC问题
+值类型如果走userdata地址作为key缓存对象这一套会有一个装箱过程。  
+解决方法：基于基元类型或由基元类型组成的结构体，复制一份到lua的userdata中。获取时按照字段排布顺序复制到C#。（在Xlua中对应Pack，UnPack方法，会为加了GCOptimizeAttribute点结构体生成对应代码）。
+# CSharpCallLua
+C#调用lua的情况：
+1. 主动获取lua的值
+2. lua调用C#端回调，传入lua值
+
+lua能获取到的C#端回调，都是在C#端封装成的lua_CFunction。所以本质还是C#主动获取lua的值。重点是function和table。  
+## function
+也就是把function映射到委托，前提是委托标记了[CSharpCallLua]并为其生成了代码（XXXBridge）。例子如下：
+![](https://pic.imgdb.cn/item/62ea493416f2c2beb1415563.png)  
+![](https://pic.imgdb.cn/item/62ea4a0216f2c2beb142527e.png)
+![](https://pic.imgdb.cn/item/62ea497816f2c2beb1419f96.png)  
+首先通过`luaL_Ref()`和function在注册表中获取一个key作为function的引用，也就是上图中的luaReference。function为key，引用为value和引用为key，function为value都写入lua注册表中。然后在C#创建XXBridge，并用刚刚得到的引用作为key存到字典中。这样获取一个function时可以直接找到对应的Bridge，然后通过上图的GetDelegeteByType获取委托。  
+这个委托的内容就是上图的`_Gen_Delegete_Imp0()`，现在来分析一下这个方法。  
+`pcall_prepare()`的作用是将对应function放到栈顶(-1)，错误处理方法放到-2。压入参数后，调用function，最后把两个方法弹出栈。如果有返回值，在执行后获取即可。
+## table
