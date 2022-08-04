@@ -1,0 +1,161 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>lua-C交互 | CY-Blog</title><meta name="keywords" content="Game"><meta name="author" content="CY"><meta name="copyright" content="CY"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d0d0d"><meta name="description" content="lua本身由C编写，同时也提供了与C交互的接口。   lua_State代表一个lua的一个线程，lua的所有C接口的第一个参数是lua_State（除了lua_newstate,他是创建一个lua_State）每个lua线程都维护一个虚拟栈和一个lua_CFunction栈（在调用lua_CFunction时，C接口操作的是lua_CFunction栈，其他时候操作的虚拟栈） 栈索引-1代表栈顶">
+<meta property="og:type" content="article">
+<meta property="og:title" content="lua-C交互">
+<meta property="og:url" content="2022/08/02/lua-C%E4%BA%A4%E4%BA%92/index.html">
+<meta property="og:site_name" content="CY-Blog">
+<meta property="og:description" content="lua本身由C编写，同时也提供了与C交互的接口。   lua_State代表一个lua的一个线程，lua的所有C接口的第一个参数是lua_State（除了lua_newstate,他是创建一个lua_State）每个lua线程都维护一个虚拟栈和一个lua_CFunction栈（在调用lua_CFunction时，C接口操作的是lua_CFunction栈，其他时候操作的虚拟栈） 栈索引-1代表栈顶">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg">
+<meta property="article:published_time" content="2022-08-02T06:57:28.000Z">
+<meta property="article:modified_time" content="2022-08-02T07:32:46.059Z">
+<meta property="article:author" content="CY">
+<meta property="article:tag" content="Game">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="2022/08/02/lua-C交互/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '//shawlove.github.io/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'lua-C交互',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2022-08-02 15:32:46'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="https://pic.imgdb.cn/item/61d7fad32ab3f51d9104927e.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="archives/"><div class="headline">文章</div><div class="length-num">5</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">CY-Blog</a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> Archives</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">lua-C交互</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-08-02T06:57:28.000Z" title="发表于 2022-08-02 14:57:28">2022-08-02</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2022-08-02T07:32:46.059Z" title="更新于 2022-08-02 15:32:46">2022-08-02</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="lua-C交互"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><p>lua本身由C编写，同时也提供了与C交互的接口。  </p>
+<h1 id="lua-State"><a href="#lua-State" class="headerlink" title="lua_State"></a>lua_State</h1><p>代表一个lua的一个线程，lua的所有C接口的第一个参数是lua_State（除了lua_newstate,他是创建一个lua_State）<br>每个lua线程都维护一个虚拟栈和一个lua_CFunction栈（在调用lua_CFunction时，C接口操作的是lua_CFunction栈，其他时候操作的虚拟栈）</p>
+<h1 id="栈索引"><a href="#栈索引" class="headerlink" title="栈索引"></a>栈索引</h1><p>-1代表栈顶，1代表栈底<br><img src="https://pic.imgdb.cn/item/62e792fe8c61dc3b8ee77b34.png">  </p>
+<h1 id="lua-CFunction"><a href="#lua-CFunction" class="headerlink" title="lua_CFunction"></a>lua_CFunction</h1><p>以下C方法为官方案例</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">foo</span><span class="params">(lua_State *L)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> n = lua_gettop(L); <span class="comment">//参数个数</span></span><br><span class="line">    lua_Number sum = <span class="number">0.0</span>;</span><br><span class="line">    <span class="keyword">int</span> i;</span><br><span class="line">    <span class="keyword">for</span>(i=<span class="number">1</span>; i&lt;=n ;i++&gt;)&#123;</span><br><span class="line">        <span class="keyword">if</span>(!lua_isnumber(L,i))&#123;</span><br><span class="line">            lua_pushliteral(L, <span class="string">&quot;参数错误，只能为number&quot;</span>);</span><br><span class="line">            lua_error(L);</span><br><span class="line">        &#125;</span><br><span class="line">        sum += lua_tonumber(L,i);</span><br><span class="line">    &#125;</span><br><span class="line">    lua_pushnumber(L, sum/n); <span class="comment">//第一个返回值</span></span><br><span class="line">    lua_pushnumber(L, sum); <span class="comment">//第二个返回值</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>static int MethodName(lua_State *L)&#123;&#125;</code>是lua_CFunction的固定格式，只有这种格式的C方法才能被lua调用<br><code>lua_State</code>代表一个lua的一个线程，lua的所有方法的第一个参数是lua_State（除了lua_newstate,他是创建一个lua_State）<br><code>lua_gettop()</code>获取栈的高度。在调用lua_CFunction时，所有对虚拟栈的操作都会指向一个新的栈，姑且称为方法栈（方法栈在非lua_CFunction调用期间也保持激活）。方法栈在每次调用lua_CFunction会清空，所以这里栈的高度就是参数个数。<br><code>lua_isnumber(L,i)</code>指定索引处值是否number<br><code>lua_pushliteral(L,&quot;&quot;)</code>字面量string入栈<br><code>lua_error()</code>报错，栈顶string作为错误信息<br><code>lua_tonumber(L,i)</code>指定索引处值转化成number<br><code>lua_pushnumber()</code>number入栈  </p>
+<p>最后返回2代表有两个返回值，就是我们按顺序压入栈道两个number。方法的参数也是第一个参数先入栈，所以index=1处的值就是第一个参数。<br>如上分析，这个函数就是计算所有参数的平均数和总和。</p>
+<h1 id="注册表"><a href="#注册表" class="headerlink" title="注册表"></a>注册表</h1><p>lua事先创建了一个张表，提供给C代码使用。这张表并不在虚拟栈中，但是可以由一个假索引（pseudo-index）LUA_REGISTRYINDEX获取。<br>常见用途是储存userdata的metatable<br><img src="https://pic.imgdb.cn/item/62e8cf8716f2c2beb1d15283.png"><br>luaL_系列的接口多是与注册表相关的API</p>
+<h1 id="userdata"><a href="#userdata" class="headerlink" title="userdata"></a>userdata</h1><p>light userdata代表指针，lua不关心其生命周期<br>full userdata代表一快由C控制的内存，可以通过lua_newuserdata创建指定字节大小的userdata<br>为userdata设置metatable后，lua调用userdata时会跳转到C代码。 </p>
+<p><code>以上，实现了lua-C的交互</code></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">CY</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="2022/08/02/lua-C交互/">2022/08/02/lua-C交互/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http:/https://shawlove.github.io" target="_blank">CY-Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"></div><div class="post_share"><div class="social-share" data-image="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="2022/08/02/P-Invoke/"><img class="prev-cover" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">C# P/Invoke</div></div></a></div><div class="next-post pull-right"><a href="2022/07/27/xlua/"><img class="next-cover" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">xlua详解</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="https://pic.imgdb.cn/item/61d7fad32ab3f51d9104927e.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">CY</div><div class="author-info__description">芜湖</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="archives/"><div class="headline">文章</div><div class="length-num">5</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/shawlove"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/shawlove" target="_blank" title="Github"><i class="fab fa-github"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#lua-State"><span class="toc-number">1.</span> <span class="toc-text">lua_State</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A0%88%E7%B4%A2%E5%BC%95"><span class="toc-number">2.</span> <span class="toc-text">栈索引</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#lua-CFunction"><span class="toc-number">3.</span> <span class="toc-text">lua_CFunction</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%B3%A8%E5%86%8C%E8%A1%A8"><span class="toc-number">4.</span> <span class="toc-text">注册表</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#userdata"><span class="toc-number">5.</span> <span class="toc-text">userdata</span></a></li></ol></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2022 By CY</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div><script src="//shawlove.github.io/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"live2d-widget-model-tororo"},"display":{"superSample":2,"width":210,"height":420,"position":"left","hOffset":0,"vOffset":-20},"mobile":{"show":true},"react":{"opacity":0.7}});</script></body></html>
