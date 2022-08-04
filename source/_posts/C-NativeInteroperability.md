@@ -8,6 +8,7 @@ categories:
 CLR提供了两种机制和非托管代码互操作：
 * Platform invoke，托管代码调用非托管代码函数
 * COM interop，托管代码通过接口和COM交互
+
 这篇文章只涉及Platform invoke（P/Invoke）
 # 使用非托管DLL函数
 ![](https://pic.imgdb.cn/item/62ea198a16f2c2beb105b268.png)
