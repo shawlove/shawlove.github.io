@@ -46,6 +46,7 @@ C#对象的属性、字段、方法都封装成lua_CFunction,C#端的定义如�
 所以上图中的FastGetCSObj就是通过userdata的地址获取缓存CS对象。这样也可以保证CS对象不被GC
 * lua注册表  
 每种类型的CS对象都有对应的metatable，将metatable缓存到lua注册表中。key值用`luaL.Ref()`获取，并在C#缓存。
+
 ## 值类型GC问题
 值类型如果走userdata地址作为key缓存对象这一套会有一个装箱过程。  
 解决方法：基于基元类型或由基元类型组成的结构体，复制一份到lua的userdata中。获取时按照字段排布顺序复制到C#。（在Xlua中对应Pack，UnPack方法，会为加了GCOptimizeAttribute点结构体生成对应代码）。
