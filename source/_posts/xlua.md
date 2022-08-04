@@ -18,8 +18,8 @@ lua是解释性语言（不事先编译，运行时通过lua解释器跨平台�
 * light userdata和full userdata机制
 * C#有与原生代码的互操作性（P/Invoke），可以与非托管代码互相操作，如C代码。  
 
-lua-c交互：https://shawlove.github.io/2022/08/02/lua-C%E4%BA%A4%E4%BA%92/  
-p/Invoke：https://shawlove.github.io/2022/08/03/C-NativeInteroperability/
+lua-c交互：<https://shawlove.github.io/2022/08/02/lua-C%E4%BA%A4%E4%BA%92/>  
+p/Invoke：<https://shawlove.github.io/2022/08/03/C-NativeInteroperability/>
 
 # LuaCallCSharp
 XLua用[LuaCallCSharp]标记lua端需要调用的C#代码，并为其生成代码。接下来进行原理分析。  
